@@ -1,0 +1,156 @@
+{
+	"10": {
+		"inputs": {
+			"image": "img2.webp"
+		},
+		"class_type": "LoadImage",
+		"_meta": {
+			"title": "Load Image"
+		}
+	},
+	"18": {
+		"inputs": {
+			"upscale_method": "nearest-exact",
+			"scale_by": 1.0000000000000002,
+			"image": ["10", 0]
+		},
+		"class_type": "ImageScaleBy",
+		"_meta": {
+			"title": "Upscale Image By"
+		}
+	},
+	"27": {
+		"inputs": {
+			"weight": 2.0000000000000004,
+			"weight_type": "ease out",
+			"combine_embeds": "concat",
+			"start_at": 0,
+			"end_at": 1,
+			"embeds_scaling": "V only",
+			"model": ["43", 0],
+			"ipadapter": ["43", 1],
+			"image": ["18", 0],
+			"attn_mask": ["29", 1]
+		},
+		"class_type": "IPAdapterAdvanced",
+		"_meta": {
+			"title": "IPAdapter Advanced"
+		}
+	},
+	"29": {
+		"inputs": {
+			"image": "clipspace/clipspace-mask-1470465.5999999996.png [input]"
+		},
+		"class_type": "LoadImage",
+		"_meta": {
+			"title": "Load Image"
+		}
+	},
+	"31": {
+		"inputs": {
+			"ckpt_name": "SD15_epicrealism_naturalSinRC1VAE.safetensors"
+		},
+		"class_type": "CheckpointLoaderSimple",
+		"_meta": {
+			"title": "Load Checkpoint"
+		}
+	},
+	"33": {
+		"inputs": {
+			"text": "",
+			"clip": ["31", 1]
+		},
+		"class_type": "CLIPTextEncode",
+		"_meta": {
+			"title": "CLIP Text Encode (Prompt)"
+		}
+	},
+	"34": {
+		"inputs": {
+			"text": "\n",
+			"clip": ["31", 1]
+		},
+		"class_type": "CLIPTextEncode",
+		"_meta": {
+			"title": "CLIP Text Encode (Prompt)"
+		}
+	},
+	"35": {
+		"inputs": {
+			"seed": 1117641299376656,
+			"steps": 30,
+			"cfg": 15,
+			"sampler_name": "dpmpp_2m",
+			"scheduler": "normal",
+			"denoise": 0.5000000000000001,
+			"model": ["27", 0],
+			"positive": ["33", 0],
+			"negative": ["34", 0],
+			"latent_image": ["36", 0]
+		},
+		"class_type": "KSampler",
+		"_meta": {
+			"title": "KSampler"
+		}
+	},
+	"36": {
+		"inputs": {
+			"pixels": ["29", 0],
+			"vae": ["31", 2]
+		},
+		"class_type": "VAEEncode",
+		"_meta": {
+			"title": "VAE Encode"
+		}
+	},
+	"37": {
+		"inputs": {
+			"samples": ["35", 0],
+			"vae": ["31", 2]
+		},
+		"class_type": "VAEDecode",
+		"_meta": {
+			"title": "VAE Decode"
+		}
+	},
+	"43": {
+		"inputs": {
+			"preset": "PLUS (high strength)",
+			"model": ["31", 0]
+		},
+		"class_type": "IPAdapterUnifiedLoader",
+		"_meta": {
+			"title": "IPAdapter Unified Loader"
+		}
+	},
+	"45": {
+		"inputs": {
+			"upscale_method": "area",
+			"scale_by": 2.0000000000000004,
+			"image": ["37", 0]
+		},
+		"class_type": "ImageScaleBy",
+		"_meta": {
+			"title": "Upscale Image By"
+		}
+	},
+	"47": {
+		"inputs": {
+			"images": ["45", 0]
+		},
+		"class_type": "PreviewImage",
+		"_meta": {
+			"title": "Preview Image"
+		}
+	},
+	"49": {
+		"inputs": {
+			"filename_prefix": "Image",
+			"images": ["45", 0]
+		},
+		"class_type": "SaveImageS3",
+		"_meta": {
+			"title": "Save Image to S3"
+		}
+	}
+}
