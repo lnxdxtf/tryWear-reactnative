@@ -98,6 +98,9 @@ export default function Prompt() {
 		// Call Workflow
 		// biome-ignore lint: Null check
 		await tryWearApp.generateImage(user, keyUserImg!, keyClothImg!, keyMaskImg!);
+
+		router.push("/generated");
+
 	};
 
 	return (

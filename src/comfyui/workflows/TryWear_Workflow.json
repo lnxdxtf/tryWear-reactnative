@@ -15,7 +15,7 @@
   },
   "27": {
     "inputs": {
-      "weight": 2.0000000000000004,
+      "weight": 1.0000000000000,
       "weight_type": "ease out",
       "combine_embeds": "concat",
       "start_at": 0,
@@ -81,11 +81,11 @@
   "35": {
     "inputs": {
       "seed": 511789355376564,
-      "steps": 30,
-      "cfg": 14,
+      "steps": 26,
+      "cfg": 12,
       "sampler_name": "euler",
       "scheduler": "normal",
-      "denoise": 1,
+      "denoise": 0.7,
       "model": [
         "27",
         0

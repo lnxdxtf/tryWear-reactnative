@@ -54,79 +54,23 @@ export default function MaskPainter() {
 	const gesture = Gesture.Pan().onStart(onStart).onUpdate(onUpdate);
 
 	const handleExport = async () => {
-		// Exporta a máscara com paths proporcionais, sem alterar o estado global de paths
 		try {
-			if (!maskCanvasRef.current) {
-				console.warn("Canvas de máscara não encontrado");
-				return;
-			}
+			if (!maskCanvasRef.current) return;
 
-			const imgW = skiaImage?.width || screenW;
-			const imgH = skiaImage?.height || screenH;
-			const scaleX = imgW / screenW;
-			const scaleY = imgH / (screenH * 0.75);
-
-			function scalePath(path: SkPath): SkPath {
-				const cmd = path.toCmds();
-				const newPath = Skia.Path.Make();
-				for (const c of cmd) {
-					if (c[0] === "M") newPath.moveTo(c[1] * scaleX, c[2] * scaleY);
-					else if (c[0] === "L") newPath.lineTo(c[1] * scaleX, c[2] * scaleY);
-					else if (c[0] === "C")
-						newPath.cubicTo(
-							c[1] * scaleX,
-							c[2] * scaleY,
-							c[3] * scaleX,
-							c[4] * scaleY,
-							c[5] * scaleX,
-							c[6] * scaleY,
-						);
-					else if (c[0] === "Q")
-						newPath.quadTo(
-							c[1] * scaleX,
-							c[2] * scaleY,
-							c[3] * scaleX,
-							c[4] * scaleY,
-						);
-					else if (c[0] === "Z") newPath.close();
-				}
-				return newPath;
-			}
-
-			const scaledPaths = paths.map(scalePath);
-			setExportPaths(scaledPaths);
-
-			maskCanvasRef.current.setNativeProps({
-				style: { opacity: 1, zIndex: 9999 },
-			});
-			await new Promise((resolve) => setTimeout(resolve, 100));
-
-			const uri = await captureRef(maskCanvasRef, {
+			// Capture the mask canvas
+			const uri = await captureRef(maskCanvasRef.current, {
 				format: "png",
 				quality: 1,
 				result: "tmpfile",
 			});
 
-			maskCanvasRef.current.setNativeProps({
-				style: { opacity: 0.01, zIndex: -1 },
-			});
-			setExportPaths(null);
-
-			if (!uri || typeof uri !== "string" || uri.length === 0) {
-				alert("Failed to export mask. Please try again.");
-				return;
-			}
-
 			setImgUserMask(uri);
-			router.back();
-		} catch (err) {
-			if (maskCanvasRef.current) {
-				maskCanvasRef.current.setNativeProps({
-					style: { opacity: 0.01, zIndex: -1 },
-				});
-			}
-			setExportPaths(null);
-			console.error("Erro ao exportar máscara:", err);
+
+			router.back()
+		} catch (_err) {
+			alert("Error exporting mask. Please try again.");
+			console.error("Error exporting mask:", _err);
+
 		}
 	};
 
@@ -193,7 +137,7 @@ export default function MaskPainter() {
 					zIndex: -1,
 					width: canvasWidth,
 					height: canvasHeight,
-					backgroundColor: "black",
+					backgroundColor: "transparent",
 				}}
 			>
 				<Canvas style={{ width: canvasWidth, height: canvasHeight }}>
@@ -201,8 +145,9 @@ export default function MaskPainter() {
 						<Path
 							key={i}
 							path={p}
-							color="white"
+							color="black"
 							style="stroke"
+							opacity={1}
 							strokeWidth={brushSize}
 						/>
 					))}

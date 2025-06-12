@@ -46,4 +46,28 @@ export default class S3Helper {
 			console.error("Error uploading image to S3:", _err);
 		}
 	}
+
+	static async getImageFromS3(key: string): Promise<any> {
+		try {
+			AWS.config.update({
+				region: process.env.EXPO_PUBLIC_S3_REGION,
+				accessKeyId: process.env.EXPO_PUBLIC_S3_ACCESS_KEY,
+				secretAccessKey: process.env.EXPO_PUBLIC_S3_SECRET_KEY,
+			});
+			const s3Client = new AWS.S3();
+
+			const params = {
+				Bucket: process.env.EXPO_PUBLIC_S3_BUCKET_NAME || "comfyui-generated",
+				Key: key,
+			};
+
+			const data = await s3Client.getObject(params).promise();
+			return data.Body
+			
+		} catch (_err:any) {
+			alert(`Error fetching image from S3. Please try again. ${_err.message}`);
+			console.error("Error fetching image from S3:", _err);
+			return null;
+		}
+	}
 }
