@@ -1,16 +1,15 @@
 import { ImageShowMain } from "@/components/ImageShow";
 import S3Helper from "@/src/S3Helper";
-import ComfyUIAPI from "@/src/comfyui/comfyuiAPI";
 import { TryWearStore } from "@/src/store";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
 import {
+	Image,
 	ImageBackground,
 	Pressable,
 	ScrollView,
 	Text,
 	View,
-	Image,
 } from "react-native";
 
 const buttonStyle = {
@@ -48,7 +47,6 @@ const deleteTextStyle = {
 export default function Prompt() {
 	// @ts-ignore
 	const user = TryWearStore((state) => state.user);
-
 	// @ts-ignore
 	const imgUser = TryWearStore((state) => state.imgUser);
 	// @ts-ignore
@@ -80,24 +78,14 @@ export default function Prompt() {
 	};
 
 	const promptFN = async () => {
-		const workflowName = "TryWear_Workflow";
-		const workflow = ComfyUIAPI.GetWorkflow(workflowName);
+		await S3Helper.uploadImageToS3FromFile(imgUser, `${user}_user`);
+		await S3Helper.uploadImageToS3FromFile(imgCloth, `${user}_cloth`);
+		await S3Helper.uploadImageToS3FromFile(imgUserMask, `${user}_mask`);
 
-		if (!imgCloth || !imgUser) {
-			console.error(
-				"Please select both user and cloth images before generating.",
-			);
-			return;
-		}
+		// Call Workflow
 
-		S3Helper.uploadImageToS3(imgCloth, `${user}_cloth`);
-		S3Helper.uploadImageToS3(imgUser, `${user}_user`);
-		// const response = await ComfyUIAPI.PromptWorkflow(workflow);
-		// console.log("Response from ComfyUI:\n ", response);
-
-		// const data = await ComfyUIAPI.UploadImage("image_test_do_pai", imgCloth);
-		// console.log("Response from ComfyUI UploadImage:\n ", data);
 	};
+
 
 	return (
 		<ScrollView
@@ -107,6 +95,9 @@ export default function Prompt() {
 				paddingVertical: 20,
 			}}
 		>
+
+			<Text style={{fontSize:12, color:"white", margin: 6}}>User: {user}</Text>
+
 			{/* USER IMAGE */}
 			<View
 				style={{
@@ -121,7 +112,6 @@ export default function Prompt() {
 				<ImageBackground
 					source={{ uri: imgUser }}
 					style={{ width: 200, height: 200 }}
-					resizeMode="cover"
 				>
 					{imgUserMask && (
 						<Image
@@ -130,10 +120,8 @@ export default function Prompt() {
 								width: 200,
 								height: 200,
 								position: "absolute",
-								resizeMode: "cover",
 								opacity: 0.9, // ← ajuste como quiser
 							}}
-							resizeMode="cover"
 						/>
 					)}
 				</ImageBackground>
@@ -149,7 +137,13 @@ export default function Prompt() {
 
 				{imgUser && (
 					// @ts-ignore
-					<Pressable onPress={() => {setImgUser(null); setImgUserMask(null)}} style={deleteButtonStyle}>
+					<Pressable
+						onPress={() => {
+							setImgUser(null);
+							setImgUserMask(null);
+						}}
+						style={deleteButtonStyle}
+					>
 						<Text style={deleteTextStyle}>X</Text>
 					</Pressable>
 				)}

@@ -9,8 +9,8 @@ import {
 } from "@shopify/react-native-skia";
 import { router } from "expo-router";
 import { useCallback, useRef, useState } from "react";
-import { Button, Dimensions, Text, TouchableOpacity, View } from "react-native";
 import type { View as RNView } from "react-native";
+import { Button, Dimensions, Text, TouchableOpacity, View } from "react-native";
 import {
 	Gesture,
 	GestureDetector,
@@ -27,9 +27,10 @@ export default function MaskPainter() {
 	const skiaImage = useImage(imgUser || "");
 
 	const [paths, setPaths] = useState<SkPath[]>([]);
-const currentPath = useRef<SkPath | null>(null);
-const canvasRef = useRef<RNView | null>(null);
-const maskCanvasRef = useRef<RNView | null>(null);
+	const [exportPaths, setExportPaths] = useState<SkPath[] | null>(null);
+	const currentPath = useRef<SkPath | null>(null);
+	const canvasRef = useRef<RNView | null>(null);
+	const maskCanvasRef = useRef<RNView | null>(null);
 	const [brushSize, setBrushSize] = useState<number>(20);
 
 	const onStart = useCallback(({ x, y }) => {
@@ -52,86 +53,90 @@ const maskCanvasRef = useRef<RNView | null>(null);
 
 	const gesture = Gesture.Pan().onStart(onStart).onUpdate(onUpdate);
 
-const handleExport = async () => {
-	// Corrige a proporção dos paths para exportação
-	try {
-		if (!maskCanvasRef.current) {
-			console.warn("Canvas de máscara não encontrado");
-			return;
-		}
-
-		const imgW = skiaImage?.width || screenW;
-		const imgH = skiaImage?.height || screenH;
-		const scaleX = imgW / screenW;
-		const scaleY = imgH / (screenH * 0.75);
-
-		// Função para escalar um path
-		function scalePath(path: SkPath): SkPath {
-			const cmd = path.toCmds();
-			const newPath = Skia.Path.Make();
-			for (const c of cmd) {
-				if (c[0] === 'M') newPath.moveTo(c[1] * scaleX, c[2] * scaleY);
-				else if (c[0] === 'L') newPath.lineTo(c[1] * scaleX, c[2] * scaleY);
-				else if (c[0] === 'C') newPath.cubicTo(
-					c[1] * scaleX, c[2] * scaleY,
-					c[3] * scaleX, c[4] * scaleY,
-					c[5] * scaleX, c[6] * scaleY
-				);
-				else if (c[0] === 'Q') newPath.quadTo(
-					c[1] * scaleX, c[2] * scaleY,
-					c[3] * scaleX, c[4] * scaleY
-				);
-				else if (c[0] === 'Z') newPath.close();
+	const handleExport = async () => {
+		// Exporta a máscara com paths proporcionais, sem alterar o estado global de paths
+		try {
+			if (!maskCanvasRef.current) {
+				console.warn("Canvas de máscara não encontrado");
+				return;
 			}
-			return newPath;
+
+			const imgW = skiaImage?.width || screenW;
+			const imgH = skiaImage?.height || screenH;
+			const scaleX = imgW / screenW;
+			const scaleY = imgH / (screenH * 0.75);
+
+			function scalePath(path: SkPath): SkPath {
+				const cmd = path.toCmds();
+				const newPath = Skia.Path.Make();
+				for (const c of cmd) {
+					if (c[0] === "M") newPath.moveTo(c[1] * scaleX, c[2] * scaleY);
+					else if (c[0] === "L") newPath.lineTo(c[1] * scaleX, c[2] * scaleY);
+					else if (c[0] === "C")
+						newPath.cubicTo(
+							c[1] * scaleX,
+							c[2] * scaleY,
+							c[3] * scaleX,
+							c[4] * scaleY,
+							c[5] * scaleX,
+							c[6] * scaleY,
+						);
+					else if (c[0] === "Q")
+						newPath.quadTo(
+							c[1] * scaleX,
+							c[2] * scaleY,
+							c[3] * scaleX,
+							c[4] * scaleY,
+						);
+					else if (c[0] === "Z") newPath.close();
+				}
+				return newPath;
+			}
+
+			const scaledPaths = paths.map(scalePath);
+			setExportPaths(scaledPaths);
+
+			maskCanvasRef.current.setNativeProps({
+				style: { opacity: 1, zIndex: 9999 },
+			});
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			const uri = await captureRef(maskCanvasRef, {
+				format: "png",
+				quality: 1,
+				result: "tmpfile",
+			});
+
+			maskCanvasRef.current.setNativeProps({
+				style: { opacity: 0.01, zIndex: -1 },
+			});
+			setExportPaths(null);
+
+			if (!uri || typeof uri !== "string" || uri.length === 0) {
+				alert("Failed to export mask. Please try again.");
+				return;
+			}
+
+			setImgUserMask(uri);
+			router.back();
+		} catch (err) {
+			if (maskCanvasRef.current) {
+				maskCanvasRef.current.setNativeProps({
+					style: { opacity: 0.01, zIndex: -1 },
+				});
+			}
+			setExportPaths(null);
+			console.error("Erro ao exportar máscara:", err);
 		}
-
-		const scaledPaths = paths.map(scalePath);
-
-		// Torna a máscara visível
-		maskCanvasRef.current.setNativeProps({ style: { opacity: 1, zIndex: 9999 } });
-
-		// Aguarda um frame para garantir renderização
-		await new Promise((resolve) => setTimeout(resolve, 100));
-
-		// Renderiza os paths escalados na máscara temporariamente
-		setPaths(scaledPaths);
-
-		await new Promise((resolve) => setTimeout(resolve, 100));
-
-		const uri = await captureRef(maskCanvasRef, {
-			format: "png",
-			quality: 1,
-			result: "tmpfile",
-		});
-
-		// Esconde novamente
-		maskCanvasRef.current.setNativeProps({ style: { opacity: 0.01, zIndex: -1 } });
-
-		// Restaura os paths originais
-		setPaths(paths);
-
-		if (!uri || typeof uri !== "string" || uri.length === 0) {
-			console.warn("Falha ao capturar a máscara");
-			return;
-		}
-
-		setImgUserMask(uri);
-		router.back();
-	} catch (err) {
-		// Tenta esconder novamente em caso de erro
-		if (maskCanvasRef.current) {
-			maskCanvasRef.current.setNativeProps({ style: { opacity: 0.01, zIndex: -1 } });
-		}
-		console.error("Erro ao exportar máscara:", err);
-	}
-};
+	};
 
 	const handleUndo = () => setPaths((prev) => prev.slice(0, -1));
 	const handleClear = () => setPaths([]);
 
-const canvasWidth = typeof skiaImage?.width === 'number' ? skiaImage.width : screenW;
-const canvasHeight = typeof skiaImage?.height === 'number' ? skiaImage.height : screenH;
+	const canvasWidth =
+		typeof skiaImage?.width === "number" ? skiaImage.width : screenW;
+	const canvasHeight =
+		typeof skiaImage?.height === "number" ? skiaImage.height : screenH;
 
 	return (
 		<GestureHandlerRootView style={{ flex: 1 }}>
@@ -141,7 +146,6 @@ const canvasHeight = typeof skiaImage?.height === 'number' ? skiaImage.height : 
 				style={{
 					width: screenW,
 					height: screenH * 0.75,
-					backgroundColor: "black",
 					overflow: "hidden",
 					gap: 10,
 				}}
@@ -185,16 +189,15 @@ const canvasHeight = typeof skiaImage?.height === 'number' ? skiaImage.height : 
 					position: "absolute",
 					top: 0,
 					left: 0,
-					opacity: 0.01,
+					opacity: 0.1,
 					zIndex: -1,
 					width: canvasWidth,
 					height: canvasHeight,
 					backgroundColor: "black",
 				}}
-				collapsable={false}
 			>
 				<Canvas style={{ width: canvasWidth, height: canvasHeight }}>
-					{paths.map((p, i) => (
+					{(exportPaths ?? paths).map((p, i) => (
 						<Path
 							key={i}
 							path={p}
