@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import TryWearApp from "./comfyui/TryWearApp";
 
 export const TryWearStore = create((set) => ({
 	user: Math.random().toString(36).substring(2, 15), // Random user ID for testing
@@ -14,4 +15,6 @@ export const TryWearStore = create((set) => ({
 
 	imgGenerated: null as string | null,
 	setImgGenerated: (img: string | null) => set({ imgGenerated: img }),
+
+	tryWearApp: new TryWearApp(),
 }));

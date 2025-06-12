@@ -1,13 +1,4 @@
 {
-  "10": {
-    "inputs": {
-      "image": "img1.webp"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "Load Image"
-    }
-  },
   "18": {
     "inputs": {
       "upscale_method": "nearest-exact",
@@ -52,15 +43,6 @@
       "title": "IPAdapter Advanced"
     }
   },
-  "29": {
-    "inputs": {
-      "image": "thispersonnotexist2.jpeg"
-    },
-    "class_type": "LoadImage",
-    "_meta": {
-      "title": "Load Image"
-    }
-  },
   "31": {
     "inputs": {
       "ckpt_name": "SD15_epicrealism_naturalSinRC1VAE.safetensors"
@@ -72,7 +54,7 @@
   },
   "33": {
     "inputs": {
-      "text": "black ",
+      "text": "",
       "clip": [
         "31",
         1
@@ -85,7 +67,7 @@
   },
   "34": {
     "inputs": {
-      "text": "\n",
+      "text": "",
       "clip": [
         "31",
         1
@@ -173,7 +155,7 @@
   },
   "45": {
     "inputs": {
-      "upscale_method": "area",
+      "upscale_method": "nearest-exact",
       "scale_by": 2.0000000000000004,
       "image": [
         "37",
@@ -207,7 +189,7 @@
     },
     "class_type": "SaveImageS3",
     "_meta": {
-      "title": "Save Image to S3"
+      "title": "Save Image On S3"
     }
   },
   "50": {

@@ -26,16 +26,20 @@ export default class S3Helper {
 
 			const fileData = await fetch(filePath).then((response) => response.blob());
 
-			const resp = s3Client
+			const contentType = S3Helper.getContentType(filePath);
+			const ext = contentType.split("/")[1];
+
+			const req = s3Client
 				.upload({
 					Bucket: process.env.EXPO_PUBLIC_S3_BUCKET_NAME || "comfyui-generated",
-					Key: `inputs/${fileNameOnS3}`,
+					Key: `inputs/${fileNameOnS3}.${ext}`,
 					Body: fileData,
-					ContentType: S3Helper.getContentType(filePath),
+					ContentType: contentType,
 				})
 				.promise();
 
-			await resp;
+			const data = await req;
+			return data.Key
 			// biome-ignore lint:
 		} catch (_err:any) {
 			alert(`Error uploading image to S3. Please try again. ${_err.message}`);

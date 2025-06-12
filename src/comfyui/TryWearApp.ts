@@ -3,16 +3,24 @@ import ComfyUIAPI from "./comfyuiAPI";
 export default class TryWearApp {
 	workflow = ComfyUIAPI.GetWorkflow("TryWear_Workflow");
 
-	loadImages(
+	async generateImage(
 		user: string,
-		imgUser: string,
-		imgCloth: string,
-		imgUserMask: string,
+		keyUserImg: string,
+		keyClothImg: string,
+		keyMaskImg: string,
 	) {
-		this.workflow[50].inputs.image = imgUser;
-		this.workflow[52].inputs.image = imgCloth;
-		this.workflow[53].inputs.image = imgUserMask;
-	}
+        
+		// Set images in the workflow
+		this.workflow[50].inputs.image = keyUserImg;
+		this.workflow[52].inputs.image = keyClothImg;
+		this.workflow[53].inputs.image = keyMaskImg;
 
-	generateImage() {}
+		// Set the path to save the output image on the s3
+		this.workflow[49].inputs.filename_prefix = `${user}_output`;
+
+		// Positive and negative prompts
+        
+		await ComfyUIAPI.PromptWorkflow(this.workflow);
+        
+	}
 }

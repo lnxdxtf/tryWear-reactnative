@@ -15,44 +15,28 @@ export default class ComfyUIAPI {
 		// biome-ignore lint/suspicious/noExplicitAny: <explanation>
 		workflow: any,
 	) {
-		const response = await fetch(
-			`${process.env.EXPO_PUBLIC_COMFYU_API_URL}/prompt`,
-			{
-				body: JSON.stringify({ prompt: workflow }),
+		const url = `${process.env.EXPO_PUBLIC_COMFYU_API_URL}/prompt`;
+		const data = JSON.stringify({ prompt: workflow });
+		try {
+			const response = await fetch(url, {
+				body: data,
 				method: "POST",
-			},
-		);
-		if (response.ok) {
-			return await response.json();
-		}
-		throw new Error(
-			`Error api prompting on comfyui: ${response.status} ${response.statusText}`,
-		);
-	}
-
-	static async UploadImage(image_name: string, image_data: any) {
-		const formData = new FormData();
-		formData.append("name", `${image_name}.png`);
-		formData.append("type", "image/png");
-		formData.append("file", image_data);
-
-		const response = await fetch(
-			`${process.env.EXPO_PUBLIC_COMFYU_API_URL}/upload/image`,
-			{
-				body: formData,
 				headers: {
-					"Content-Type": "multipart/form-data",
-					Accept: "application/json",
+					"content-type": "application/json",
+					accept: "application/json, text/plain, */*",
 				},
-
-				method: "POST",
-			},
-		);
-		if (response.ok) {
-			return await response.json();
+			});
+		
+			if (response.ok) {
+				const json = await response.json();
+				return json;
+			}
+			throw new Error(
+				`Error api prompting on comfyui: ${response.status} ${response.statusText}`,
+			);
+		} catch (error) {
+			console.error("[ComfyUIAPI] Fetch error:", error);
+			throw error;
 		}
-		throw new Error(
-			`Error api uploading image to comfyui: ${response.status} ${response.statusText}`,
-		);
 	}
 }

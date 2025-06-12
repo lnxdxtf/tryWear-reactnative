@@ -1,5 +1,6 @@
 import { ImageShowMain } from "@/components/ImageShow";
 import S3Helper from "@/src/S3Helper";
+import type TryWearApp from "@/src/comfyui/TryWearApp";
 import { TryWearStore } from "@/src/store";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
@@ -60,6 +61,9 @@ export default function Prompt() {
 	// @ts-ignore
 	const setImgUserMask = TryWearStore((state) => state.setImgUserMask);
 
+	// @ts-ignore
+	const tryWearApp: TryWearApp = TryWearStore((state) => state.tryWearApp);
+
 	const pickImage = async (isUser: boolean) => {
 		const result = await ImagePicker.launchImageLibraryAsync({
 			mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -78,14 +82,23 @@ export default function Prompt() {
 	};
 
 	const promptFN = async () => {
-		await S3Helper.uploadImageToS3FromFile(imgUser, `${user}_user`);
-		await S3Helper.uploadImageToS3FromFile(imgCloth, `${user}_cloth`);
-		await S3Helper.uploadImageToS3FromFile(imgUserMask, `${user}_mask`);
+		const keyUserImg = await S3Helper.uploadImageToS3FromFile(
+			imgUser,
+			`${user}_user`,
+		);
+		const keyClothImg = await S3Helper.uploadImageToS3FromFile(
+			imgCloth,
+			`${user}_cloth`,
+		);
+		const keyMaskImg = await S3Helper.uploadImageToS3FromFile(
+			imgUserMask,
+			`${user}_mask`,
+		);
 
 		// Call Workflow
-
+		// biome-ignore lint: Null check
+		await tryWearApp.generateImage(user, keyUserImg!, keyClothImg!, keyMaskImg!);
 	};
-
 
 	return (
 		<ScrollView
@@ -95,8 +108,9 @@ export default function Prompt() {
 				paddingVertical: 20,
 			}}
 		>
-
-			<Text style={{fontSize:12, color:"white", margin: 6}}>User: {user}</Text>
+			<Text style={{ fontSize: 12, color: "white", margin: 6 }}>
+				User: {user}
+			</Text>
 
 			{/* USER IMAGE */}
 			<View
@@ -181,7 +195,7 @@ export default function Prompt() {
 					backgroundColor: "#46494C",
 					margin: 20,
 					borderRadius: 10,
-					padding: 10,
+					padding: 2,
 					elevation: 2,
 					alignItems: "center",
 				}}
