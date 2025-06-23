@@ -61,6 +61,9 @@ export default function Prompt() {
 	// @ts-ignore
 	const setImgUserMask = TryWearStore((state) => state.setImgUserMask);
 
+	const generating = TryWearStore((state) => state.generating);
+	const setGenerating = TryWearStore((state) => state.setGenerating);
+
 	// @ts-ignore
 	const tryWearApp: TryWearApp = TryWearStore((state) => state.tryWearApp);
 
@@ -82,24 +85,42 @@ export default function Prompt() {
 	};
 
 	const promptFN = async () => {
-		const keyUserImg = await S3Helper.uploadImageToS3FromFile(
-			imgUser,
-			`${user}_user`,
-		);
-		const keyClothImg = await S3Helper.uploadImageToS3FromFile(
-			imgCloth,
-			`${user}_cloth`,
-		);
-		const keyMaskImg = await S3Helper.uploadImageToS3FromFile(
-			imgUserMask,
-			`${user}_mask`,
-		);
+		try {
 
-		// Call Workflow
-		// biome-ignore lint: Null check
-		await tryWearApp.generateImage(user, keyUserImg!, keyClothImg!, keyMaskImg!);
+			if (generating) {
+				return;
+			}
 
-		router.push("/generated");
+			if (!imgUser || !imgCloth || !imgUserMask) {
+				alert("Please select both user and cloth images, and mask the user image.");
+				return;
+			}
+			const keyUserImg = await S3Helper.uploadImageToS3FromFile(
+				imgUser,
+				`${user}_user`,
+			);
+			const keyClothImg = await S3Helper.uploadImageToS3FromFile(
+				imgCloth,
+				`${user}_cloth`,
+			);
+			
+			const keyMaskImg = await S3Helper.uploadImageToS3FromFile(
+				imgUserMask,
+				`${user}_mask`,
+			);
+			
+			// Call Workflow
+			// biome-ignore lint: Null check
+			await tryWearApp.generateImage(user, keyUserImg!, keyClothImg!, keyMaskImg!);
+			setGenerating(true);
+			tryWearApp.getGeneratedImage(user, router);
+
+			
+		} catch (_err) {
+			alert("Error generating image. Please try again.");
+			console.error("Error generating image:", _err);
+		}
+			
 
 	};
 

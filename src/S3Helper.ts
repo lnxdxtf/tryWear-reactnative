@@ -24,7 +24,9 @@ export default class S3Helper {
 			});
 			const s3Client = new AWS.S3();
 
-			const fileData = await fetch(filePath).then((response) => response.blob());
+			const fileData = await fetch(filePath).then((response) =>
+				response.blob(),
+			);
 
 			const contentType = S3Helper.getContentType(filePath);
 			const ext = contentType.split("/")[1];
@@ -39,15 +41,15 @@ export default class S3Helper {
 				.promise();
 
 			const data = await req;
-			return data.Key
+			return data.Key;
 			// biome-ignore lint:
-		} catch (_err:any) {
+		} catch (_err: any) {
 			alert(`Error uploading image to S3. Please try again. ${_err.message}`);
 			console.error("Error uploading image to S3:", _err);
 		}
 	}
 
-	static async getImageFromS3(key: string): Promise<any> {
+	static async getImageFromS3(key: string): Promise<string | null> {
 		try {
 			AWS.config.update({
 				region: process.env.EXPO_PUBLIC_S3_REGION,
@@ -60,13 +62,18 @@ export default class S3Helper {
 				Bucket: process.env.EXPO_PUBLIC_S3_BUCKET_NAME || "comfyui-generated",
 				Key: key,
 			};
-
 			const data = await s3Client.getObject(params).promise();
-			return data.Body
-			
-		} catch (_err:any) {
-			alert(`Error fetching image from S3. Please try again. ${_err.message}`);
-			console.error("Error fetching image from S3:", _err);
+			const body = data.Body;
+
+			let base64 = "";
+			// biome-ignore lint: check if body is not null
+			base64 = body!.toString("base64");
+			const imageUri = `data:image/png;base64,${base64}`;
+			return imageUri;
+
+			// biome-ignore lint: 
+		} catch (_err: any) {
+			console.error("Error getting image from S3:", _err);
 			return null;
 		}
 	}
