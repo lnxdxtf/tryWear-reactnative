@@ -64,6 +64,8 @@ export default function Prompt() {
 	const generating = TryWearStore((state) => state.generating);
 	const setGenerating = TryWearStore((state) => state.setGenerating);
 
+	const setImgGenerated = TryWearStore((state) => state.setImgGenerated);
+
 	// @ts-ignore
 	const tryWearApp: TryWearApp = TryWearStore((state) => state.tryWearApp);
 
@@ -87,6 +89,8 @@ export default function Prompt() {
 	const promptFN = async () => {
 		try {
 
+			setImgGenerated(null);
+
 			if (generating) {
 				return;
 			}
@@ -103,24 +107,24 @@ export default function Prompt() {
 				imgCloth,
 				`${user}_cloth`,
 			);
-			
+
 			const keyMaskImg = await S3Helper.uploadImageToS3FromFile(
 				imgUserMask,
 				`${user}_mask`,
 			);
-			
+
 			// Call Workflow
 			// biome-ignore lint: Null check
 			await tryWearApp.generateImage(user, keyUserImg!, keyClothImg!, keyMaskImg!);
 			setGenerating(true);
 			tryWearApp.getGeneratedImage(user, router);
 
-			
+
 		} catch (_err) {
 			alert("Error generating image. Please try again.");
 			console.error("Error generating image:", _err);
 		}
-			
+
 
 	};
 

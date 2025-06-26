@@ -16,7 +16,7 @@ export default class TryWearApp {
 	) {
 		// Set Model
 		// Change the model that uses SD 1.5 (Stable Diffusion 1.5)
-		// this.workflow[31].inputs.ckpt_name = "SD_1_5_realDream_15SD15.safetensors"
+		this.workflow[31].inputs.ckpt_name = "SD_1_5_realDream_15SD15.safetensors"
 
 		// Set images in the workflow
 		this.workflow[50].inputs.image = keyUserImg;
@@ -24,6 +24,7 @@ export default class TryWearApp {
 		this.workflow[53].inputs.image = keyMaskImg;
 
 		// Set the path to save the output image on the s3
+		
 		this.workflow[49].inputs.filename_prefix = `${user}_output`;
 
 		// Positive and negative prompts
